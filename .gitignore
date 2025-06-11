@@ -1,0 +1,7 @@
+.venv/
+.idea/
+.env
+__pycache__/
+pytest_cache/
+keys/private.pem
+to_do
