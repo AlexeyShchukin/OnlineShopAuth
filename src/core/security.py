@@ -6,6 +6,7 @@ from passlib.context import CryptContext
 from jose import jwt, ExpiredSignatureError, JWTError
 
 from src.core.config import settings
+from src.loggers.loggers import logger
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login/")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=10)
@@ -55,6 +56,7 @@ def decode_token(token: str, key: str, algorithm: str) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
     except JWTError:
+        logger.warning("Invalid token", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",

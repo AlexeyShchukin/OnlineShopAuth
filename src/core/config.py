@@ -1,15 +1,22 @@
 from functools import cached_property
 from pathlib import Path
+from dotenv import load_dotenv
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+dotenv_path = Path(__file__).parent.parent.parent / '.env'
+if dotenv_path.exists():
+    load_dotenv(dotenv_path)
+
 class Settings(BaseSettings):
-    DB_HOST: str
+    DB_HOST: str = "localhost"
     DB_PORT: str
     DB_USER: str
     DB_PASS: str
     DB_NAME: str
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
     ACCESS_TOKEN_ALGORITHM: str
     REFRESH_TOKEN_ALGORITHM: str
     REFRESH_TOKEN_SECRET_KEY: str
@@ -42,7 +49,7 @@ class Settings(BaseSettings):
         type(self).private_key.fdel(self)
         type(self).public_key.fdel(self)
 
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict()
 
 
 settings = Settings()

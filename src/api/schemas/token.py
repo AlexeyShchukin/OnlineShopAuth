@@ -3,19 +3,15 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from src.api.schemas.base import BaseSchema
+
 
 class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
 
-class TokenPairResponse(AccessTokenResponse):
-    refresh_token: str
-
-
-class SessionInfo(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class SessionInfo(BaseSchema):
     id: UUID
     ip_address: str
     user_agent: str

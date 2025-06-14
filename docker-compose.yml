@@ -1,0 +1,141 @@
+services:
+  # ---------------------
+  # Zookeeper for Kafka
+  # ---------------------
+  zookeeper:
+    image: bitnami/zookeeper:3.8
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+
+  # ---------------------
+  # Kafka Brokers
+  # ---------------------
+  kafka1:
+    image: bitnami/kafka:3.5
+    container_name: kafka1
+    depends_on:
+      - zookeeper
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "sleep 30 && /opt/bitnami/scripts/kafka/entrypoint.sh /run.sh"
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,EXTERNAL://:19092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka1:9092,EXTERNAL://host.docker.internal:19092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=2
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=2
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=2
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1
+
+  kafka2:
+    image: bitnami/kafka:3.5
+    container_name: kafka2
+    depends_on:
+      - zookeeper
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "sleep 30 && /opt/bitnami/scripts/kafka/entrypoint.sh /run.sh"
+    ports:
+      - "9093:9093"
+      - "19093:19093"
+    environment:
+      - KAFKA_BROKER_ID=2
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9093,EXTERNAL://:19093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka2:9093,EXTERNAL://host.docker.internal:19093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=2
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=2
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=2
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1
+
+  # ---------------------
+  # Kafka UI
+  # ---------------------
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka1
+      - kafka2
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka1:9092,kafka2:9093
+
+  # ---------------------
+  # PostgreSQL Database
+  # ---------------------
+  db:
+    image: postgres:17.4
+    container_name: postgres_db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # ---------------------
+  # Alembic migrations
+  # ---------------------
+  migrate:
+    build: .
+    command: [ "./migrate.sh" ]
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+  # ---------------------
+  # Redis Cache
+  # ---------------------
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  # ---------------------
+  # FastAPI Application
+  # ---------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: online_shop_auth
+    env_file:
+      - .env
+    volumes:
+      - ./keys/private.pem:/app/keys/private.pem:ro
+      - ./keys/public.pem:/app/keys/public.pem:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+      - kafka1
+      - kafka2
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

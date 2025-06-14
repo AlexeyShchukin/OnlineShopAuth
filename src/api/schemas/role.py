@@ -1,11 +1,11 @@
-from pydantic import BaseModel
+from src.api.schemas.base import BaseSchema
 
 
-class RoleSchema(BaseModel):
+class RoleSchema(BaseSchema):
     id: int
     name: str
 
 
-class PermissionSchema(BaseModel):
+class PermissionSchema(BaseSchema):
     id: int
     name: str

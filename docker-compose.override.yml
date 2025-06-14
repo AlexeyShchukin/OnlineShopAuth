@@ -1,0 +1,10 @@
+services:
+  app:
+    volumes:
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+      - ./main.py:/app/main.py
+      - ./requirements.txt:/app/requirements.txt
+      - ./alembic.ini:/app/alembic.ini
+      - ./.env:/app/.env
+      - ./README.md:/app/README.md

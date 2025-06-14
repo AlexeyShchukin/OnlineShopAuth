@@ -1,16 +1,15 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, constr, Field
+from pydantic import ConfigDict, EmailStr, constr, Field, field_validator
 
-from src.api.schemas.mixins import PasswordValidationMixin
+from src.api.schemas.base import BaseSchema
 from src.api.schemas.role import PermissionSchema, RoleSchema
 from src.core.constants import PASSWORD_DESCRIPTION
+from src.utils.password_validators import validate_password_strength
 
 
-class UserBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class UserBase(BaseSchema):
     first_name: constr(min_length=3,
                        max_length=30) = Field(description="First_name must be between 3 and 30 characters long")
     last_name: constr(min_length=3,
@@ -19,13 +18,18 @@ class UserBase(BaseModel):
     telephone: str | None = None
 
 
-class UserCreate(UserBase, PasswordValidationMixin):
+class UserCreate(UserBase):
     password: constr(min_length=8) = Field(description=PASSWORD_DESCRIPTION)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str):
+        return validate_password_strength(v)
+
+    model_config = ConfigDict(**UserBase.model_config, str_strip_whitespace=True)
 
 
 class UserPublic(UserBase):
-    model_config = ConfigDict(from_attributes=True)
-
     id: UUID
     created_at: datetime
 
@@ -45,10 +49,17 @@ class UserInternal(UserPublic):
         return [p.name for p in self.permissions]
 
 
-class UserUpdate(BaseModel, PasswordValidationMixin):
+class UserUpdate(BaseSchema):
     id: UUID
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None
     password: constr(min_length=8) | None = Field(default=None, description=PASSWORD_DESCRIPTION)
     telephone: str | None = None
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str):
+        return validate_password_strength(v)
+
+    model_config = ConfigDict(**BaseSchema.model_config, str_strip_whitespace=True)
