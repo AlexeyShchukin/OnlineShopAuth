@@ -18,3 +18,14 @@ class EventPublisher:
             }
         )
 
+    async def publish_profile_updated(self, user: UserPublic):
+        await self._producer.send(
+            topic="profile_updated",
+            message={
+                "event_type": "profile_updated",
+                "user_id": str(user.id),
+                "email": user.email,
+                "first_name": user.first_name,
+                "timestamp": user.created_at.isoformat()
+            }
+        )

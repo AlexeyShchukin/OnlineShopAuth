@@ -156,8 +156,15 @@ class UserService:
             validate_user_exists(user)
             validate_user_is_active(user)
 
-            data = user_update.model_dump(exclude_unset=True)
-            self.uow.users.update(user, data)
-            await self.uow.commit()
-            await uow.session.refresh(user)
-            return UserPublic.model_validate(user)
+            if not await uow.users.find_by_email(user_update.email):
+                data = user_update.model_dump(exclude_unset=True)
+                self.uow.users.update(user, data)
+                await self.uow.commit()
+                await uow.session.refresh(user)
+                return UserPublic.model_validate(user)
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A user with this email already exists"
+            )
+
