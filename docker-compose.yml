@@ -101,8 +101,9 @@ services:
     command: [ "./migrate.sh" ]
     depends_on:
       - db
-    environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+    env_file:
+      - .env
+
   # ---------------------
   # Redis Cache
   # ---------------------

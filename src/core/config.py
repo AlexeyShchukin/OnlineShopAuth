@@ -1,13 +1,8 @@
 from functools import cached_property
 from pathlib import Path
-from dotenv import load_dotenv
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
-dotenv_path = Path(__file__).parent.parent.parent / '.env'
-if dotenv_path.exists():
-    load_dotenv(dotenv_path)
 
 class Settings(BaseSettings):
     DB_HOST: str = "localhost"
@@ -49,7 +44,7 @@ class Settings(BaseSettings):
         type(self).private_key.fdel(self)
         type(self).public_key.fdel(self)
 
-    model_config = SettingsConfigDict()
+    model_config = SettingsConfigDict(env_file=".env")
 
 
 settings = Settings()

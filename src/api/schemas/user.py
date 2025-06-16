@@ -50,7 +50,6 @@ class UserInternal(UserPublic):
 
 
 class UserUpdate(BaseSchema):
-    id: UUID
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None

@@ -4,9 +4,10 @@ from fastapi import HTTPException, status
 from redis.asyncio import Redis
 
 from src.api.schemas.role import RoleSchema, PermissionSchema
-from src.api.schemas.user import UserCreate, UserInternal, UserPublic
-from src.core.security import hash_password, verify_password
+from src.api.schemas.user import UserCreate, UserInternal, UserPublic, UserUpdate
+from src.core.security import hash_password, verify_password, get_user_id_from_token
 from src.services.rate_limiter import LoginRateLimiter
+from src.services.validators.user_validators import validate_user_exists, validate_user_is_active
 from src.utils.unit_of_work import IUnitOfWork
 
 
@@ -40,11 +41,8 @@ class UserService:
     async def find_user_by_email(self, user_email: str) -> UserInternal:
         async with self.uow as uow:
             user_from_db = await uow.users.find_by_email(user_email)
-            if not user_from_db:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="User not found"
-                )
+            validate_user_exists(user_from_db)
+
             roles = [RoleSchema(id=role.id, name=role.name) for role in user_from_db.roles]
 
             unique_permissions = {
@@ -79,12 +77,7 @@ class UserService:
             )
 
         user = await self.find_user_by_email(email)
-
-        if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User account is inactive",
-            )
+        validate_user_is_active(user)
 
         if not verify_password(password, user.hashed_password):
             attempts = await limiter.incr_attempts(email)
@@ -109,11 +102,7 @@ class UserService:
     async def find_user_by_id(self, user_id: UUID) -> UserInternal:
         async with self.uow as uow:
             user_from_db = await uow.users.find_by_id(user_id)
-            if not user_from_db:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="User not found"
-                )
+            validate_user_exists(user_from_db)
 
             roles = [RoleSchema(id=role.id, name=role.name) for role in user_from_db.roles]
 
@@ -152,14 +141,23 @@ class UserService:
     async def check_user_by_id(self, user_id: UUID) -> None:
         async with self.uow as uow:
             user = await uow.users.check_user_by_id(user_id)
-            if not user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="User not found"
-                )
+            validate_user_exists(user)
+            validate_user_is_active(user)
 
-            if not user.is_active:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="User account is inactive",
-                )
+    async def update_user(
+            self,
+            user_update: UserUpdate,
+            token: str
+    ) -> UserPublic:
+        async with self.uow as uow:
+            user_id = get_user_id_from_token(token)
+
+            user = await uow.users.find_by_id(user_id)
+            validate_user_exists(user)
+            validate_user_is_active(user)
+
+            data = user_update.model_dump(exclude_unset=True)
+            self.uow.users.update(user, data)
+            await self.uow.commit()
+            await uow.session.refresh(user)
+            return UserPublic.model_validate(user)

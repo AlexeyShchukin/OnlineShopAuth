@@ -28,8 +28,6 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    addresses: Mapped[list["Address"]] = relationship("Address", back_populates="user")
-
     roles: Mapped[list["Role"]] = relationship(
         secondary="users_roles",
         back_populates="users"
@@ -39,25 +37,6 @@ class User(Base):
         "RefreshToken",
         back_populates="user"
     )
-
-
-class Address(Base):
-    __tablename__ = "addresses"
-    id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid4
-    )
-    address_type: Mapped[str] = mapped_column()
-    country: Mapped[str] = mapped_column(String(30))
-    city: Mapped[str] = mapped_column(String(30))
-    street: Mapped[str] = mapped_column(String(30))
-    house: Mapped[str] = mapped_column(String(10))
-    apartment: Mapped[str] = mapped_column(String(10), nullable=True)
-    postal_code: Mapped[str] = mapped_column(String(20))
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
-
-    user: Mapped["User"] = relationship("User", back_populates="addresses")
 
 
 class Role(Base):

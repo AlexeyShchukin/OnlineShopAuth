@@ -52,5 +52,8 @@ class Repository(AbstractRepository):
     async def delete(self, instance):
         await self.session.delete(instance)
 
-    async def update(self, instance):
-        pass
+    def update(self, instance, data: dict):
+        for field, value in data.items():
+            if hasattr(instance, field):
+                setattr(instance, field, value)
+        return instance

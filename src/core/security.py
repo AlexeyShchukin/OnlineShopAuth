@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -78,3 +79,15 @@ def decode_refresh_token(token: str) -> dict:
         key=settings.REFRESH_TOKEN_SECRET_KEY,
         algorithm=settings.REFRESH_TOKEN_ALGORITHM
     )
+
+
+def get_user_id_from_token(token: str) -> UUID:
+    payload = decode_access_token(token)
+    try:
+        user_id = UUID(payload["sub"])
+    except (KeyError, ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload"
+        )
+    return user_id
