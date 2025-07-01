@@ -30,8 +30,3 @@ async def update_user(
     updated_user = await user_service.update_user(user_update, token)
     await event_publisher.publish_profile_updated(updated_user)
     return updated_user
-
-
-@user_router.delete("/users/profile/")
-async def delete_user(current_user: Annotated[UserPublic, Depends(get_current_user)]) :
-    ...

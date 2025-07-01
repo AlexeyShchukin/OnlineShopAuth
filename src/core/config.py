@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     PUBLIC_KEY_PATH: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
+    KAFKA_BOOTSTRAP_SERVERS: str
+    KAFKA_USER_REGISTERED_TOPIC: str
+    KAFKA_PROFILE_UPDATED_TOPIC: str
 
     @property
     def ASYNC_DATABASE_URL(self):

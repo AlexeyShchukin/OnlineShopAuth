@@ -1,9 +1,11 @@
 from aiokafka import AIOKafkaProducer
 import json
 
+from src.core.config import settings
+
 
 class KafkaProducer:
-    def __init__(self, bootstrap_servers: str = "host.docker.internal:19092"):
+    def __init__(self, bootstrap_servers: str = settings.KAFKA_BOOTSTRAP_SERVERS):
         self.bootstrap_servers = bootstrap_servers
         self._producer = AIOKafkaProducer(
             bootstrap_servers=self.bootstrap_servers,

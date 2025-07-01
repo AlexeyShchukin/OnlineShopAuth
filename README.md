@@ -1,20 +1,37 @@
-# OnlineShopAuth
+# OnlineShopAuth Service
 
+---
 
-### Кеширование публичного ключа
+## Overview
 
-- Ключ хранится в оперативной памяти микросервиса.
+This repository hosts the **OnlineShopAuth** service, a core component of a microservice-oriented e-commerce platform. This service is responsible for handling user authentication and authorization, providing secure access to the system for both customers and administrators. It leverages **FastAPI** for its high performance and ease of use, **SQLAlchemy 2.0 (Async)** for asynchronous ORM operations with PostgreSQL, and **Apache Kafka** for asynchronous communication and event-driven architecture within the microservices ecosystem.
 
-- При первом HTTP запросе к auth-сервису микросервис загружает публичный ключ и сохраняет его в памяти.
+---
 
-- Если ключ изменится,Auth-сервис публикует событие в Kafka: auth.public_key_updated
+## Features
 
-- Другие сервисы обращаются к auth GET /auth/public_key
+* **User Registration:** Securely register new user accounts.
+* **User Authentication:** Authenticate users via email and password.
+* **JWT Generation:** Issue JSON Web Tokens (JWT) for authenticated sessions.
+* **Token Refresh:** Support for refreshing expired access tokens using refresh tokens.
+* **Password Hashing:** Secure storage of user passwords using modern hashing algorithms.
+* **Role-Based Authorization:** Basic support for user roles (e.g., `user`, `admin`).
+* **Event-Driven Communication:** Publishes and consumes Kafka messages for user-related events.
 
-### Проверка прав пользователя
+---
 
-- Из хедера извлекается access token
+## Tech Stack
 
-- Токен декодируется публичным ключом
+* **FastAPI**: High-performance web framework for building APIs.
+* **SQLAlchemy 2.0 (Async)**: Asynchronous ORM for database interactions.
+* **PostgreSQL**: Relational database for storing user data.
+* **Apache Kafka**: Distributed streaming platform for asynchronous communication.
+* **Alembic**: Database migration tool.
+* **Pydantic**: Data validation and settings management.
+* **Passlib**: Secure password hashing.
+* **PyJWT**: JWT (JSON Web Token) implementation.
+* **Confluent-Kafka-Python**: Python client for Kafka.
+* **Redis**: Asynchronous Redis client for Python.
 
-- Из payload извлекаются permissions и сравниваются с доступами ресурса
+---
+

@@ -1,4 +1,5 @@
 from src.api.schemas.user import UserPublic
+from src.core.config import settings
 from src.infrastructure.kafka.producer import KafkaProducer
 
 
@@ -8,7 +9,7 @@ class EventPublisher:
 
     async def publish_user_registered(self, user: UserPublic):
         await self._producer.send(
-            topic="user_registered",
+            topic=settings.KAFKA_USER_REGISTERED_TOPIC,
             message={
                 "event_type": "user_registered",
                 "user_id": str(user.id),
@@ -20,7 +21,7 @@ class EventPublisher:
 
     async def publish_profile_updated(self, user: UserPublic):
         await self._producer.send(
-            topic="profile_updated",
+            topic=settings.KAFKA_PROFILE_UPDATED_TOPIC,
             message={
                 "event_type": "profile_updated",
                 "user_id": str(user.id),
