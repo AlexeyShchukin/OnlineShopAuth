@@ -9,7 +9,8 @@ This service is responsible for handling user authentication and authorization,
 providing secure access to the system for both customers and administrators. 
 It leverages **FastAPI** for its high performance and ease of use, **SQLAlchemy 2.0 (Async)** 
 for asynchronous ORM operations with PostgreSQL, **Apache Kafka** for asynchronous communication, 
-and **Redis** for caching or session management within the microservices ecosystem. 
+and **Redis** as a storage backend for rate limiting,
+preventing brute-force attacks by temporarily blocking users after multiple failed login attempts.
 A key security feature is the **use of RSA private keys for JWT signing**, 
 with **public keys provided to other microservices for secure and efficient token verification**.
 
