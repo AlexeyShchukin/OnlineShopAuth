@@ -37,7 +37,7 @@ with **public keys provided to other microservices for secure and efficient toke
 * **Alembic**: Database migration tool.
 * **Pydantic**: Data validation and settings management.
 * **Passlib**: Secure password hashing.
-* **PyJWT**: JWT (JSON Web Token) implementation.
+* **python-jose**: Used for working with JWT and RSA signatures.
 * **Confluent-Kafka-Python**: Python client for Kafka.
 * **Redis**: Asynchronous Redis client for Python.
 
