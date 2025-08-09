@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -18,6 +18,14 @@ class AbstractRepository(ABC):
     async def find_by_id(self, uuid_: UUID):
         raise NotImplementedError
 
+    @abstractmethod
+    async def update_one(self, instance, data: dict):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_one(self, instance):
+        raise NotImplementedError
+
 
 class Repository(AbstractRepository):
     model = None
@@ -27,8 +35,8 @@ class Repository(AbstractRepository):
 
     async def add_one(self, data: dict):
         stmt = insert(self.model).values(**data).returning(self.model)
-        res = await self.session.execute(stmt)
-        return res.scalar_one()
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def find_all(
             self,
@@ -49,11 +57,10 @@ class Repository(AbstractRepository):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def delete(self, instance):
-        await self.session.delete(instance)
+    async def update_one(self, item_id: UUID, data: dict) -> None:
+        stmt = update(self.model).where(self.model.id == item_id).values(**data)
+        await self.session.execute(stmt)
 
-    def update(self, instance, data: dict):
-        for field, value in data.items():
-            if hasattr(instance, field):
-                setattr(instance, field, value)
-        return instance
+    async def delete_one(self, item_id: UUID) -> None:
+        stmt = delete(self.model).where(self.model.id == item_id)
+        await self.session.execute(stmt)

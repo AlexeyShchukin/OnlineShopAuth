@@ -16,10 +16,10 @@ class User(Base):
         primary_key=True,
         default=uuid4
     )
-    first_name: Mapped[str] = mapped_column(String(30), unique=False, nullable=False)
-    last_name: Mapped[str] = mapped_column(String(30), unique=False, nullable=False)
-    email: Mapped[str] = mapped_column(String(50), nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(100), nullable=False)
+    first_name: Mapped[str] = mapped_column(String(30), unique=False, nullable=True)
+    last_name: Mapped[str] = mapped_column(String(30), unique=False, nullable=True)
+    email: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    hashed_password: Mapped[str] = mapped_column(String(100), nullable=True)
     telephone: Mapped[str] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -27,6 +27,9 @@ class User(Base):
         nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    google_sub: Mapped[str] = mapped_column(String(100), unique=True, nullable=True)
+    google_refresh_token: Mapped[str] = mapped_column(String(255), nullable=True)
 
     roles: Mapped[list["Role"]] = relationship(
         secondary="users_roles",
@@ -37,6 +40,22 @@ class User(Base):
         "RefreshToken",
         back_populates="user"
     )
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    def to_dict_with_relations(self, relations_to_include=None):
+        data = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+        if relations_to_include:
+            for relation_name in relations_to_include:
+                related_obj = getattr(self, relation_name)
+                if related_obj:
+                    if isinstance(related_obj, list):
+                        data[relation_name] = [item.to_dict() for item in related_obj]
+                    else:
+                        data[relation_name] = related_obj.to_dict()
+        return data
 
 
 class Role(Base):
@@ -50,11 +69,16 @@ class Role(Base):
         secondary="users_roles",
         back_populates="roles"
     )
-
     permissions: Mapped[list["Permission"]] = relationship(
         secondary="roles_permissions",
         back_populates="roles"
     )
+
+    def to_dict(self):
+        data = {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+        data["permissions"] = [p.to_dict() for p in self.permissions]
+        return data
 
 
 class Permission(Base):
@@ -68,6 +92,9 @@ class Permission(Base):
         secondary="roles_permissions",
         back_populates="permissions"
     )
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 users_roles = Table(
@@ -111,6 +138,9 @@ class RefreshToken(Base):
     __table_args__ = (Index('ix_refresh_tokens_token_user', 'token', 'user_id'),)
 
     user: Mapped["User"] = relationship("User", back_populates="tokens")
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def __repr__(self):
         return f"<RefreshToken(user_id={self.user_id}, expires_at={self.expires_at})>"

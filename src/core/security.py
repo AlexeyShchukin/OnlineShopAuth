@@ -7,6 +7,7 @@ from passlib.context import CryptContext
 from jose import jwt, ExpiredSignatureError, JWTError
 
 from src.core.config import settings
+from src.exceptions.service_exceptions import InvalidTokenException
 from src.loggers.loggers import logger
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login/")
@@ -86,8 +87,5 @@ def get_user_id_from_token(token: str) -> UUID:
     try:
         user_id = UUID(payload["sub"])
     except (KeyError, ValueError, TypeError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload"
-        )
+        raise InvalidTokenException()
     return user_id

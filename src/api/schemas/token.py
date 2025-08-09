@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from src.api.schemas.base import BaseSchema
+from src.api.schemas.base import BaseSchemaOut
 
 
 class AccessTokenResponse(BaseModel):
@@ -11,7 +11,7 @@ class AccessTokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-class SessionInfo(BaseSchema):
+class SessionInfo(BaseSchemaOut):
     id: UUID
     ip_address: str
     user_agent: str

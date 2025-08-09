@@ -25,7 +25,7 @@ with **public keys provided to other microservices for secure and efficient toke
 * **Password Hashing:** Secure storage of user passwords using modern hashing algorithms.
 * **Role-Based Authorization:** Basic support for user roles (e.g., `user`, `admin`).
 * **Event-Driven Communication:** Publishes and consumes Kafka messages for user-related events.
-
+* **Google authentication:** Authenticate users via Google account with CSRF attack prevention.
 ---
 
 ## Tech Stack
