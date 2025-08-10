@@ -49,12 +49,12 @@ auth_router = APIRouter(tags=["Auth"])
 async def create_user(
         user_data: UserCreate,
         user_service: Annotated[UserService, Depends(get_user_service)],
-        event_publisher: EventPublisher = Depends(get_event_publisher)
+        event_publisher: Annotated[EventPublisher, Depends(get_event_publisher)]
 ) -> UserPublic:
-    user_from_db = await user_service.add_user(user_data)
+    user_dict = await user_service.add_user(user_data)
 
-    await event_publisher.publish_user_registered(user_from_db)
-    return UserPublic.model_validate(user_from_db)
+    await event_publisher.publish_user_registered(user_dict)
+    return UserPublic.model_validate(user_dict)
 
 
 @auth_router.post(
@@ -238,6 +238,7 @@ async def handle_google_callback(
         oauth_service: Annotated[OAuthService, Depends(get_oauth_service)],
         user_service: Annotated[UserService, Depends(get_user_service)],
         token_service: Annotated[TokenService, Depends(get_token_service)],
+        event_publisher: Annotated[EventPublisher, Depends(get_event_publisher)],
         request: Request,
         response: Response
 ) -> OAuthResponse:
@@ -263,6 +264,7 @@ async def handle_google_callback(
         )
 
     user_data = await user_service.get_or_create_user(
+        event_publisher=event_publisher,
         user_info=user_info,
         refresh_token=refresh_token
     )

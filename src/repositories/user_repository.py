@@ -32,8 +32,8 @@ class UserRepository(Repository):
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
 
-    async def assign_role(self, user_id: UUID, role_id: int) -> None:
-        stmt = insert(users_roles).values(user_id=user_id, role_id=role_id)
+    async def assign_role(self, user: User, role: Role) -> None:
+        stmt = insert(users_roles).values(user_id=user.id, role_id=role.id)
         await self.session.execute(stmt)
 
     async def check_user_by_id(self, user_id: UUID):

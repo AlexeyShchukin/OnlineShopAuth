@@ -15,6 +15,8 @@ from src.exceptions.service_exceptions import (
     UserAlreadyExistsException,
     ServiceException
 )
+from src.infrastructure.kafka import event_publisher
+from src.infrastructure.kafka.event_publisher import EventPublisher
 from src.services.rate_limiter import LoginRateLimiter
 from src.utils.unit_of_work import IUnitOfWork
 
@@ -31,7 +33,7 @@ class UserService:
                 user_dict["hashed_password"] = hashed_password
                 user_from_db = await uow.users.add_one(user_dict)
 
-                await self._assign_default_role(uow, user_from_db.id)
+                await self._assign_default_role(uow, user_from_db)
 
                 return user_from_db.to_dict()
             raise UserAlreadyExistsException()
@@ -115,7 +117,10 @@ class UserService:
             return user
 
     async def get_or_create_user(
-            self, user_info: dict, refresh_token: str
+            self,
+            event_publisher: EventPublisher,
+            user_info: dict,
+            refresh_token: str
     ) -> dict[str, Any]:
         """
         Retrieves a user by Google sub or email, or creates a new one.
@@ -126,7 +131,7 @@ class UserService:
             if user:
                 if user.google_refresh_token != refresh_token:
                     user.google_refresh_token = refresh_token
-                    await uow.session.add(user)
+                    uow.session.add(user)
                 return self._get_user_data_with_roles_and_permissions(user)
 
             user = await uow.users.find_by_email(user_info["email"])
@@ -134,7 +139,7 @@ class UserService:
             if user:
                 user.google_sub = user_info["sub"]
                 user.google_refresh_token = refresh_token
-                await uow.session.add(user)
+                uow.session.add(user)
                 return self._get_user_data_with_roles_and_permissions(user)
 
             new_user_data = {
@@ -146,10 +151,14 @@ class UserService:
                 "hashed_password": None,
             }
             new_user = await uow.users.add_one(new_user_data)
-            await self._assign_default_role(uow, new_user.id)
+            await self._assign_default_role(uow, new_user)
 
-            user_from_db = await uow.users.find_by_id(new_user.id)
-            return self._get_user_data_with_roles_and_permissions(user_from_db)
+            user_with_relations = await uow.users.find_by_id(new_user.id)
+            user_dict = self._get_user_data_with_roles_and_permissions(user_with_relations)
+
+            await event_publisher.publish_user_registered(user_dict)
+
+            return user_dict
 
     @staticmethod
     def _get_user_data_with_roles_and_permissions(user: User) -> dict[str, Any]:
@@ -166,8 +175,8 @@ class UserService:
         return user_data
 
     @staticmethod
-    async def _assign_default_role(uow: IUnitOfWork, user_id: UUID) -> None:
+    async def _assign_default_role(uow: IUnitOfWork, user: User) -> None:
         default_role = await uow.roles.find_by_name("customer")
         if not default_role:
             raise ServiceException("Default 'customer' role not found in database.")
-        await uow.users.assign_role(user_id, default_role.id)
+        await uow.users.assign_role(user, default_role)
