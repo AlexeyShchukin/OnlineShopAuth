@@ -33,8 +33,6 @@ class UserService:
 
                 await self._assign_default_role(uow, user_from_db.id)
 
-                await uow.commit()
-                await uow.session.refresh(user_from_db)
                 return user_from_db.to_dict()
             raise UserAlreadyExistsException()
 
@@ -112,8 +110,6 @@ class UserService:
             for field, value in data.items():
                 setattr(user_from_db, field, value)
 
-            await uow.commit()
-            await uow.session.refresh(user_from_db)
             user = user_from_db.to_dict()
 
             return user
@@ -129,26 +125,16 @@ class UserService:
 
             if user:
                 if user.google_refresh_token != refresh_token:
-                    await uow.users.update_one(
-                        user.id,
-                        {"google_refresh_token": refresh_token}
-                    )
-                    await uow.commit()
-                    await uow.session.refresh(user)
+                    user.google_refresh_token = refresh_token
+                    await uow.session.add(user)
                 return self._get_user_data_with_roles_and_permissions(user)
 
             user = await uow.users.find_by_email(user_info["email"])
 
             if user:
-                await uow.users.update_one(
-                    user.id,
-                    {
-                        "google_sub": user_info["sub"],
-                        "google_refresh_token": refresh_token
-                    }
-                )
-                await uow.commit()
-                await uow.session.refresh(user)
+                user.google_sub = user_info["sub"]
+                user.google_refresh_token = refresh_token
+                await uow.session.add(user)
                 return self._get_user_data_with_roles_and_permissions(user)
 
             new_user_data = {
@@ -161,9 +147,9 @@ class UserService:
             }
             new_user = await uow.users.add_one(new_user_data)
             await self._assign_default_role(uow, new_user.id)
-            await uow.commit()
-            await uow.session.refresh(new_user)
-            return self._get_user_data_with_roles_and_permissions(new_user)
+
+            user_from_db = await uow.users.find_by_id(new_user.id)
+            return self._get_user_data_with_roles_and_permissions(user_from_db)
 
     @staticmethod
     def _get_user_data_with_roles_and_permissions(user: User) -> dict[str, Any]:

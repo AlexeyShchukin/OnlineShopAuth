@@ -58,8 +58,15 @@ class Repository(AbstractRepository):
         return result.scalar_one_or_none()
 
     async def update_one(self, item_id: UUID, data: dict) -> None:
-        stmt = update(self.model).where(self.model.id == item_id).values(**data)
-        await self.session.execute(stmt)
+        stmt = (
+            update(self.model)
+            .where(self.model.id == item_id)
+            .values(**data)
+            .returning(self.model)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
 
     async def delete_one(self, item_id: UUID) -> None:
         stmt = delete(self.model).where(self.model.id == item_id)

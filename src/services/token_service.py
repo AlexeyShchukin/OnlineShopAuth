@@ -30,17 +30,14 @@ class TokenService:
             )
             if rows_deleted == 0:
                 raise TokenNotFoundException()
-            await uow.commit()
 
     async def logout_all(self, user_id: UUID) -> None:
         async with self.uow as uow:
             await uow.refresh_tokens.delete_all_for_user(user_id)
-            await uow.commit()
 
     async def cleanup_expired_and_used_sessions(self):
         async with self.uow as uow:
             await uow.refresh_tokens.delete_expired_tokens()
-            await uow.commit()
 
     async def generate_tokens(
             self,
@@ -71,7 +68,6 @@ class TokenService:
             app_refresh_token = await self._create_and_save_new_refresh_token(
                 user.id, ip_address, user_agent, uow
             )
-            await uow.commit()
 
         return access_token, app_refresh_token
 
@@ -118,7 +114,6 @@ class TokenService:
             new_refresh_token_str = await self._create_and_save_new_refresh_token(
                 user_id, ip_address, user_agent, uow
             )
-            await uow.commit()
 
             return access_token, new_refresh_token_str
 
