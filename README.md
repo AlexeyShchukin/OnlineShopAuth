@@ -13,6 +13,7 @@ and **Redis** as a storage backend for rate limiting,
 preventing brute-force attacks by temporarily blocking users after multiple failed login attempts.
 A key security feature is the **use of RSA private keys for JWT signing**, 
 with **public keys provided to other microservices for secure and efficient token verification**.
+Added authorization via **Google**.
 
 ---
 
@@ -25,7 +26,7 @@ with **public keys provided to other microservices for secure and efficient toke
 * **Password Hashing:** Secure storage of user passwords using modern hashing algorithms.
 * **Role-Based Authorization:** Basic support for user roles (e.g., `user`, `admin`).
 * **Event-Driven Communication:** Publishes and consumes Kafka messages for user-related events.
-
+* **Google authentication:** Authenticate users via Google account with CSRF attack prevention.
 ---
 
 ## Tech Stack

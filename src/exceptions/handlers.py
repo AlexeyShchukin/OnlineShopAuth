@@ -1,10 +1,17 @@
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
-from fastapi import Request, status
+from fastapi import Request, status, Response
 from sqlalchemy.exc import SQLAlchemyError
 
+from src.exceptions.service_exceptions import (
+    ServiceException,
+    InvalidPasswordException,
+    TokenNotFoundException,
+    TokenAlreadyUsedException
+)
 from src.loggers.loggers import logger
+from src.utils.cookie_utils import delete_old_refresh_token_from_cookie
 
 
 async def validation_exception_handler(
@@ -75,4 +82,29 @@ async def handle_unexpected_error(request: Request, exc: Exception) -> ORJSONRes
             "error": type(exc).__name__,
             "message": "Internal server error. Please try again later."
         }
+    )
+
+
+async def service_exception_handler(
+        request: Request,
+        exc: ServiceException
+):
+    logger.error(
+        "ServiceException handled during request %s %s: %s",
+        request.method,
+        request.url,
+        str(exc),
+        exc_info=exc
+    )
+
+    content = {"detail": exc.message}
+    headers = {}
+    if isinstance(exc, InvalidPasswordException):
+        headers["WWW-Authenticate"] = "Bearer"
+        content["remaining_attempts"] = exc.remaining_attempts
+
+    return ORJSONResponse(
+        status_code=exc.status_code,
+        content=content,
+        headers=headers
     )

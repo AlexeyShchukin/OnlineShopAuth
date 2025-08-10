@@ -1,6 +1,7 @@
 from time import perf_counter
 
 from fastapi import Request
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.loggers.loggers import logger
@@ -23,3 +24,13 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         )
 
         return response
+
+
+def configure_cors(app):
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )

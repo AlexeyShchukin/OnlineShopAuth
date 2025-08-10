@@ -1,11 +1,12 @@
-from src.api.schemas.base import BaseSchema
+from src.api.schemas.base import BaseSchemaOut
 
 
-class RoleSchema(BaseSchema):
+class RoleSchema(BaseSchemaOut):
     id: int
     name: str
+    permissions: list["PermissionSchema"]
 
 
-class PermissionSchema(BaseSchema):
+class PermissionSchema(BaseSchemaOut):
     id: int
     name: str

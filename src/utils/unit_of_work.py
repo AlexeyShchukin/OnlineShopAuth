@@ -43,8 +43,12 @@ class UnitOfWork(IUnitOfWork):
         self.refresh_tokens = RefreshTokenRepository(self.session)
         return self
 
-    async def __aexit__(self, *args):
-        await self.rollback()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            await self.commit()
+        else:
+            await self.rollback()
+
         await self.session.close()
         self.session = None
 
