@@ -7,7 +7,7 @@ from src.services.user_service import UserService
 from src.utils.unit_of_work import IUnitOfWork, UnitOfWork
 
 
-async def get_user_service(uow: Annotated[IUnitOfWork, Depends(UnitOfWork)]) -> UserService:
+def get_user_service(uow: Annotated[IUnitOfWork, Depends(UnitOfWork)]) -> UserService:
     return UserService(uow)
 
 

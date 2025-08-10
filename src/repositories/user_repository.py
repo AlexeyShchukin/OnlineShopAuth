@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import select, insert, join, distinct
+from sqlalchemy import select, insert
 from sqlalchemy.orm import selectinload
 
-from src.db.models import User, users_roles, Role, roles_permissions, Permission
+from src.db.models import User, users_roles, Role
 from src.repositories.base_repository import Repository
 
 

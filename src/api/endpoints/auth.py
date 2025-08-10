@@ -4,18 +4,20 @@ from uuid import UUID
 
 import aiohttp
 from redis.asyncio import Redis
-from fastapi import Depends, APIRouter, Request, status, Response, HTTPException
+from fastapi import Depends, APIRouter, Request, status, Response, HTTPException, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 
 from src.api.dependencies.oauth_dependency import get_oauth_service
-from src.api.schemas.oauth import GoogleAuthCallbackBody, OAuthResponse
-from src.exceptions.service_exceptions import (TokenAlreadyUsedException,
-                                               TokenNotFoundException,
-                                               UserNotFoundException,
-                                               InvalidTokenException,
-                                               MissingTokenException,
-                                               )
+from src.api.schemas.oauth import OAuthResponse
+from src.exceptions.service_exceptions import (
+    TokenAlreadyUsedException,
+    TokenNotFoundException,
+    UserNotFoundException,
+    InvalidTokenException,
+    MissingTokenException,
+)
+from src.loggers.loggers import logger
 from src.services.oauth_service import OAuthService
 from src.api.dependencies.kafka_dependency import get_event_publisher
 from src.api.dependencies.token_dependency import get_token_service, get_refresh_token_from_cookie
@@ -220,17 +222,18 @@ async def get_google_oauth_redirect_uri(
     and stores the state parameter in Redis.
     """
     state = secrets.token_urlsafe(32)
-
-    await redis.set(name=f"oauth:state:{state}", value="valid", ex=300)
-
+    state_key = f"oauth:state:{state}"
+    await redis.set(name=state_key, value="valid", ex=300)
+    logger.info(f"State key stored in Redis: {state_key}")
     uri = oauth_service.generate_google_oauth_redirect_uri(state)
 
     return RedirectResponse(url=uri)
 
 
-@auth_router.post("/google/callback", response_model=OAuthResponse)
+@auth_router.get("/google/callback", response_model=OAuthResponse)
 async def handle_google_callback(
-        callback_data: GoogleAuthCallbackBody,
+        code: Annotated[str, Query()],
+        state: Annotated[str, Query()],
         redis: Annotated[Redis, Depends(get_redis)],
         oauth_service: Annotated[OAuthService, Depends(get_oauth_service)],
         user_service: Annotated[UserService, Depends(get_user_service)],
@@ -241,9 +244,11 @@ async def handle_google_callback(
     """
     Handles Google OAuth callback, authenticates the user, and issues tokens.
     """
-    state_key = f"oauth:state:{callback_data.state}"
+    state_key = f"oauth:state:{state}"
+    logger.info(f"Received state key from URL: {state_key}")
     state_value = await redis.get(state_key)
     if not state_value:
+        logger.error(f"State key not found in Redis: {state_key}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired state parameter."
@@ -253,7 +258,7 @@ async def handle_google_callback(
 
     async with aiohttp.ClientSession() as session:
         user_info, files, refresh_token = await oauth_service.handle_google_callback(
-            code=callback_data.code,
+            code=code,
             session=session,
         )
 

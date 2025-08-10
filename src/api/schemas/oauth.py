@@ -2,13 +2,8 @@ from typing import Any
 
 from pydantic import Field
 
-from src.api.schemas.base import BaseSchemaOut, BaseSchemaIn
+from src.api.schemas.base import BaseSchemaOut
 from src.api.schemas.user import UserPublic
-
-
-class GoogleAuthCallbackBody(BaseSchemaIn):
-    code: str
-    state: str
 
 
 class GoogleIdTokenPayload(BaseSchemaOut):

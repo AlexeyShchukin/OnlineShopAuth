@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import ConfigDict, EmailStr, constr, Field, field_validator, BaseModel
+from pydantic import EmailStr, constr, Field, field_validator, BaseModel, computed_field
 
 from src.api.schemas.base import BaseSchemaOut, BaseSchemaIn
 from src.api.schemas.role import PermissionSchema, RoleSchema
@@ -42,11 +42,19 @@ class UserPublic(UserBase, BaseSchemaOut):
 
 
 class UserInternal(UserPublic):
-    hashed_password: str
+    hashed_password: str | None
     is_active: bool
     roles: list[RoleSchema]
-    permissions: list[PermissionSchema]
     google_refresh_token: str | None = None
+
+    @computed_field
+    @property
+    def permissions(self) -> list[PermissionSchema]:
+        unique_permissions: dict[int, PermissionSchema] = {}
+        for role in self.roles:
+            for permission in role.permissions:
+                unique_permissions[permission.id] = permission
+        return list(unique_permissions.values())
 
     @property
     def role_names(self) -> list[str]:

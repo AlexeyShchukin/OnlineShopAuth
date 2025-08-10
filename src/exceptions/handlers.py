@@ -87,7 +87,6 @@ async def handle_unexpected_error(request: Request, exc: Exception) -> ORJSONRes
 
 async def service_exception_handler(
         request: Request,
-        response: Response,
         exc: ServiceException
 ):
     logger.error(
